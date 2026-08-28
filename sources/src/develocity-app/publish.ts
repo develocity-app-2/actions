@@ -80,10 +80,14 @@ export async function configurePublishing(status: RepoStatus): Promise<PublishOu
 
     // The project id the App would have this build publish to. The repository id is the project id
     // by construction, so nothing repository-specific has to be configured or kept in sync.
-    const projectId = process.env['GITHUB_REPOSITORY_ID']
     defaultInjectionVariable('DEVELOCITY_INJECTION_ENABLED', 'true')
-    defaultInjectionVariable('DEVELOCITY_INJECTION_PROJECT_ID', projectId)
+    defaultInjectionVariable('DEVELOCITY_INJECTION_PROJECT_ID', process.env['GITHUB_REPOSITORY_ID'])
     defaultInjectionVariable('DEVELOCITY_INJECTION_DEVELOCITY_PLUGIN_VERSION', DEFAULT_DEVELOCITY_PLUGIN_VERSION)
+
+    // Read back rather than reusing the default: when the workflow set its own project id, that is
+    // the one the build will use, and reporting the id this module *would* have chosen would
+    // describe a build that is not the one running.
+    const projectId = process.env['DEVELOCITY_INJECTION_PROJECT_ID']
 
     if (credentialAlreadySupplied()) {
         core.info('Develocity App: a Develocity access key is already configured, so no OIDC token is minted.')

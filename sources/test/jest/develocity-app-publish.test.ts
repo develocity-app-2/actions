@@ -121,6 +121,14 @@ describe('build scan publishing', () => {
         expect(process.env['DEVELOCITY_INJECTION_PROJECT_ID']).toBe('chosen-by-the-workflow')
     })
 
+    it('reports the project the build will actually use, not the one it would have chosen', async () => {
+        process.env['DEVELOCITY_INJECTION_PROJECT_ID'] = 'chosen-by-the-workflow'
+
+        const outcome = await configure()
+
+        expect(outcome).toEqual({kind: 'configured', projectId: 'chosen-by-the-workflow'})
+    })
+
     it('exchanges an OIDC token for the Develocity server, host-qualified and masked', async () => {
         const outcome = await configure()
 
