@@ -22,6 +22,16 @@ import {mintIdToken, oidcAvailable} from './token'
 export const STATUS_STATE = 'DEVELOCITY_APP_STATUS'
 
 /**
+ * The status fetched in this step, handed from the reporting half to the acting half.
+ *
+ * Deliberately in memory rather than via `core.saveState`/`getState`: those move state from the
+ * main step to the *post* step, and the runner only populates `STATE_*` in the post step's
+ * environment. Read back within a single step, `getState` always returns empty. `saveState` below
+ * still runs, because the post step is what it is for.
+ */
+let fetchedStatus: RepoStatus | undefined
+
+/**
  * Act on the features the App reported, once upstream's own setup has run.
  *
  * Deliberately a second entry point rather than part of `reportDevelocityAppStatus`, because both
@@ -36,10 +46,9 @@ export const STATUS_STATE = 'DEVELOCITY_APP_STATUS'
  */
 export async function configureDevelocityAppFeatures(): Promise<void> {
     try {
-        const saved = core.getState(STATUS_STATE)
-        if (!saved) return
+        if (!fetchedStatus) return
 
-        const outcome = await configurePublishing(JSON.parse(saved) as RepoStatus)
+        const outcome = await configurePublishing(fetchedStatus)
         if (outcome.kind === 'failed') {
             core.warning(`Develocity App: Build Scan publishing could not be configured. ${outcome.reason}`)
         }
@@ -100,6 +109,7 @@ export async function reportDevelocityAppStatus(): Promise<void> {
 
         const status = result.status
         core.saveState(STATUS_STATE, JSON.stringify(status))
+        fetchedStatus = status
 
         const enabled = (status.features ?? []).filter(feature => feature.enabled).map(feature => feature.id)
         core.info(

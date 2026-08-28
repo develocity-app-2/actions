@@ -150,3 +150,38 @@ describe('build scan publishing', () => {
         expect(exported['DEVELOCITY_ACCESS_KEY']).toBeUndefined()
     })
 })
+
+/**
+ * The handoff between the two halves of the module, which is easy to get wrong in a way no unit
+ * test of either half would catch: `core.saveState` is a main-to-post-step channel, so reading the
+ * status back with `getState` inside the same step silently yields nothing and publishing is
+ * skipped with no error anywhere.
+ */
+describe('the status handoff within one step', () => {
+    beforeEach(() => {
+        jest.clearAllMocks()
+        for (const key of Object.keys(inputs)) delete inputs[key]
+        for (const key of Object.keys(exported)) delete exported[key]
+        for (const name of INJECTION_VARS) delete process.env[name]
+
+        inputs['develocity-url'] = SERVER
+        inputs['develocity-app-url'] = 'https://app.example.com'
+        process.env['GITHUB_REPOSITORY_ID'] = '1335548142'
+        process.env['ACTIONS_ID_TOKEN_REQUEST_URL'] = 'https://runner.example.com/token?api-version=1'
+        process.env['ACTIONS_ID_TOKEN_REQUEST_TOKEN'] = 'runner-token'
+    })
+
+    it('acts on the status the reporting half fetched', async () => {
+        jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response(JSON.stringify(status(true)), {status: 200})
+        )
+
+        const app = await import('../../src/develocity-app/index')
+        await app.reportDevelocityAppStatus()
+        await app.configureDevelocityAppFeatures()
+
+        expect(exported['DEVELOCITY_INJECTION_ENABLED']).toBe('true')
+        expect(exported['DEVELOCITY_INJECTION_PROJECT_ID']).toBe('1335548142')
+        expect(exported['DEVELOCITY_ACCESS_KEY']).toBe('develocity.example.com=short.lived.token')
+    })
+})
