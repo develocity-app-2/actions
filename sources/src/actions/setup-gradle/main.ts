@@ -1,4 +1,5 @@
 import * as setupGradle from '../../setup-gradle'
+import {reportDevelocityAppStatus} from '../../develocity-app'
 import * as provisioner from '../../execution/provision'
 import * as dependencyGraph from '../../dependency-graph'
 import {
@@ -26,6 +27,10 @@ export async function run(): Promise<void> {
         }
 
         setActionId('gradle/actions/setup-gradle')
+
+        // Report this repository's Develocity GitHub App status. Written here, in the main step,
+        // so the call to action lands above the build-results summary the post step appends.
+        await reportDevelocityAppStatus()
 
         // Configure Gradle environment (Gradle User Home)
         await setupGradle.setup(new CacheConfig(), new DevelocityConfig(), new WrapperValidationConfig())

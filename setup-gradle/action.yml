@@ -197,6 +197,24 @@ inputs:
     description: The password for the repository URL to use when resolving the Develocity and CCUD plugins; Consider using secrets to pass the value to this variable.
     required: false
 
+  # Develocity GitHub App configuration (fork delta)
+  # Prefixed `develocity-app-` so they never collide with the `develocity-*` inputs above, which
+  # mean the Develocity *server*. These two mean the Develocity GitHub App, a different thing.
+  develocity-app-url:
+    description: |
+      Base URL of the Develocity GitHub App. A default rather than a constant so the address can be
+      changed without rebuilding the bundle, and overridden by a workflow without forking.
+    required: false
+    default: 'https://mortician-fling-outsell.ngrok-free.dev'
+
+  develocity-app-audience:
+    description: |
+      OIDC audience to request when identifying this repository to the Develocity GitHub App.
+      Empty means use 'develocity-app-url', which matches the App's own default. Override only when
+      the App is configured with a matching OIDC_AUDIENCE.
+    required: false
+    default: ''
+
   # Wrapper validation configuration
   validate-wrappers:
     description: |

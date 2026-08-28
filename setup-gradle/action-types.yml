@@ -145,6 +145,13 @@ inputs:
   gradle-plugin-repository-password:
     type: string
 
+  # Develocity GitHub App configuration (fork delta)
+  develocity-app-url:
+    type: string
+
+  develocity-app-audience:
+    type: string
+
   # Wrapper validation configuration
   validate-wrappers:
     type: boolean
