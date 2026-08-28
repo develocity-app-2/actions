@@ -1,5 +1,5 @@
 import * as setupGradle from '../../setup-gradle'
-import {reportDevelocityAppStatus} from '../../develocity-app'
+import {configureDevelocityAppFeatures, reportDevelocityAppStatus} from '../../develocity-app'
 import * as provisioner from '../../execution/provision'
 import * as dependencyGraph from '../../dependency-graph'
 import {
@@ -34,6 +34,10 @@ export async function run(): Promise<void> {
 
         // Configure Gradle environment (Gradle User Home)
         await setupGradle.setup(new CacheConfig(), new DevelocityConfig(), new WrapperValidationConfig())
+
+        // Act on what the App reported, after upstream's setup so that the workflow's own inputs
+        // and any supplied access key have already had their say.
+        await configureDevelocityAppFeatures()
 
         // Configure the dependency graph submission
         await dependencyGraph.setup(new DependencyGraphConfig())

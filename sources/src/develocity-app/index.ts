@@ -2,7 +2,8 @@ import * as core from '@actions/core'
 
 import {fetchRepoStatus, type RepoStatus} from './client'
 import {buildConnectUrl, contextFromEnvironment} from './connectUrl'
-import {connectPrompt, connectedSummary, unreachableSummary} from './summary'
+import {configurePublishing} from './publish'
+import {connectPrompt, connectedSummary, publishSummary, unreachableSummary} from './summary'
 import {mintIdToken, oidcAvailable} from './token'
 
 /**
@@ -19,6 +20,39 @@ import {mintIdToken, oidcAvailable} from './token'
 
 /** Where the fetched status is saved for the post step, and for the steps built on top of this. */
 export const STATUS_STATE = 'DEVELOCITY_APP_STATUS'
+
+/**
+ * Act on the features the App reported, once upstream's own setup has run.
+ *
+ * Deliberately a second entry point rather than part of `reportDevelocityAppStatus`, because both
+ * things it does depend on running *after* `setupGradle.setup(...)`:
+ *
+ * - the injection variables are defaulted only where the action's inputs did not set them, and
+ *   those inputs are exported to the environment by upstream's `buildScan.setup`;
+ * - an access key supplied by the workflow is exchanged by upstream's `setupToken`, and minting an
+ *   OIDC token before that ran would race a credential this module is supposed to defer to.
+ *
+ * Reads the status saved in the main step. The App is not called a second time.
+ */
+export async function configureDevelocityAppFeatures(): Promise<void> {
+    try {
+        const saved = core.getState(STATUS_STATE)
+        if (!saved) return
+
+        const outcome = await configurePublishing(JSON.parse(saved) as RepoStatus)
+        if (outcome.kind === 'failed') {
+            core.warning(`Develocity App: Build Scan publishing could not be configured. ${outcome.reason}`)
+        }
+
+        const rendered = publishSummary(outcome)
+        if (rendered) {
+            core.summary.addRaw(rendered)
+            await core.summary.write()
+        }
+    } catch (error) {
+        core.warning(`Develocity App: could not configure features. ${asMessage(error)}`)
+    }
+}
 
 /**
  * Written in the *main* step, not the post step, for two reasons: `GITHUB_STEP_SUMMARY` appends in

@@ -1,4 +1,5 @@
 import type {Feature, RepoStatus} from './client'
+import type {PublishOutcome} from './publish'
 
 /**
  * Rendering the four states into the Job Summary.
@@ -67,4 +68,28 @@ export function unreachableSummary(repository: string, connectUrl: string): stri
 
 **[Connect \`${repository}\` to Develocity →](${connectUrl})**
 `
+}
+
+/**
+ * What became of Build Scan publishing, appended after the status block.
+ *
+ * "Enabled" and "actually configured" are different things once publishing is real, and the gap
+ * between them is where every credential failure lands. A refused or unattempted publish does not
+ * fail the build -- the Develocity plugin warns and the build still succeeds -- so without a line
+ * saying publishing was expected and did not happen, the only evidence is a scan that never appears.
+ */
+export function publishSummary(outcome: PublishOutcome): string {
+    switch (outcome.kind) {
+        case 'not-enabled':
+            return ''
+        case 'configured':
+            return `\nBuild Scans publish to project \`${outcome.projectId ?? 'unknown'}\`.\n`
+        case 'delegated':
+            return '\nBuild Scans publish using the Develocity access key this workflow supplied.\n'
+        case 'failed':
+            return (
+                '\n**Build Scan publishing is enabled for this repository, but could not be configured.**\n' +
+                `This build will not publish. ${outcome.reason}\n`
+            )
+    }
 }

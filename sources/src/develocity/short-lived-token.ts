@@ -89,7 +89,7 @@ export async function getToken(
     return empty
 }
 
-class ShortLivedTokenClient {
+export class ShortLivedTokenClient {
     httpc: httpm.HttpClient
     maxRetries = 3
     retryInterval = 1000
@@ -141,7 +141,7 @@ class ShortLivedTokenClient {
     }
 }
 
-type HostnameAccessKey = {
+export type HostnameAccessKey = {
     hostname: string
     key: string
 }

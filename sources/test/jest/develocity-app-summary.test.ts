@@ -76,3 +76,31 @@ describe('unreachable summary', () => {
         expect(unreachableSummary(REPO, CONNECT_URL)).not.toContain('connected to Develocity via')
     })
 })
+
+describe('publish summary', () => {
+    it('says nothing when the feature is not enabled', async () => {
+        const {publishSummary} = await import('../../src/develocity-app/summary')
+        expect(publishSummary({kind: 'not-enabled'})).toBe('')
+    })
+
+    it('names the project when publishing is configured', async () => {
+        const {publishSummary} = await import('../../src/develocity-app/summary')
+        expect(publishSummary({kind: 'configured', projectId: '1335548142'})).toContain('`1335548142`')
+    })
+
+    it('says a supplied access key is doing the publishing', async () => {
+        const {publishSummary} = await import('../../src/develocity-app/summary')
+        expect(publishSummary({kind: 'delegated'})).toContain('access key this workflow supplied')
+    })
+
+    // The row that earns its place: a failed exchange publishes nothing and still exits 0, so
+    // without this the only evidence is a Build Scan that never appears.
+    it('states that publishing was expected and did not happen, with the reason', async () => {
+        const {publishSummary} = await import('../../src/develocity-app/summary')
+        const rendered = publishSummary({kind: 'failed', reason: '401 from /api/auth/token'})
+
+        expect(rendered).toContain('could not be configured')
+        expect(rendered).toContain('will not publish')
+        expect(rendered).toContain('401 from /api/auth/token')
+    })
+})

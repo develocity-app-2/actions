@@ -14,12 +14,18 @@ const getIDToken = jest.fn(async (_audience?: string): Promise<string> => 'a.tok
 const setSecret = jest.fn()
 const warning = jest.fn()
 
+// The mock must cover everything the module graph touches, not just what this test asserts on:
+// ESM linking fails outright on a missing named export, wherever in the graph it is referenced.
 jest.unstable_mockModule('@actions/core', () => ({
     getInput: (name: string) => inputs[name] ?? '',
     info: jest.fn(),
+    debug: jest.fn(),
     warning,
+    setFailed: jest.fn(),
     setSecret,
     saveState: jest.fn(),
+    getState: jest.fn(() => ''),
+    exportVariable: jest.fn(),
     getIDToken,
     summary: {
         addRaw: (text: string) => {
