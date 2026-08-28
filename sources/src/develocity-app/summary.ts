@@ -83,7 +83,11 @@ export function publishSummary(outcome: PublishOutcome): string {
         case 'not-enabled':
             return ''
         case 'configured':
-            return `\nBuild Scans publish to project \`${outcome.projectId ?? 'unknown'}\`.\n`
+            return outcome.injected
+                ? `\nBuild Scans publish to project \`${outcome.projectId ?? 'unknown'}\`.\n`
+                : `\nA Develocity credential is configured for project \`${outcome.projectId ?? 'unknown'}\`, but ` +
+                      'Develocity injection is disabled by this workflow, so only a build that applies the ' +
+                      'Develocity plugin itself will publish.\n'
         case 'delegated':
             return '\nBuild Scans publish using the Develocity access key this workflow supplied.\n'
         case 'failed':

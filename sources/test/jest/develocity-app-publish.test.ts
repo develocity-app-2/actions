@@ -126,14 +126,14 @@ describe('build scan publishing', () => {
 
         const outcome = await configure()
 
-        expect(outcome).toEqual({kind: 'configured', projectId: 'chosen-by-the-workflow'})
+        expect(outcome).toEqual({kind: 'configured', projectId: 'chosen-by-the-workflow', injected: true})
     })
 
     it('exchanges an OIDC token for the Develocity server, host-qualified and masked', async () => {
         const outcome = await configure()
 
         expect(getIDToken).toHaveBeenCalledWith(SERVER)
-        expect(outcome).toEqual({kind: 'configured', projectId: '1335548142'})
+        expect(outcome).toEqual({kind: 'configured', projectId: '1335548142', injected: true})
         expect(exported['DEVELOCITY_ACCESS_KEY']).toBe('develocity.example.com=short.lived.token')
         expect(setSecret).toHaveBeenCalledWith('short.lived.token')
     })
@@ -164,6 +164,14 @@ describe('build scan publishing', () => {
 
         // The project id is needed whichever credential publishes.
         expect(exported['DEVELOCITY_INJECTION_PROJECT_ID']).toBe('1335548142')
+    })
+
+    it('does not claim a build will publish when the workflow disabled injection', async () => {
+        process.env['DEVELOCITY_INJECTION_ENABLED'] = 'false'
+
+        const outcome = await configure()
+
+        expect(outcome).toEqual({kind: 'configured', projectId: '1335548142', injected: false})
     })
 
     it('reports a failed exchange rather than throwing', async () => {

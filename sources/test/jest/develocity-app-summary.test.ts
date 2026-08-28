@@ -85,7 +85,17 @@ describe('publish summary', () => {
 
     it('names the project when publishing is configured', async () => {
         const {publishSummary} = await import('../../src/develocity-app/summary')
-        expect(publishSummary({kind: 'configured', projectId: '1335548142'})).toContain('`1335548142`')
+        expect(publishSummary({kind: 'configured', projectId: '1335548142', injected: true})).toContain(
+            'publish to project `1335548142`'
+        )
+    })
+
+    it('says injection is off rather than claiming the build will publish', async () => {
+        const {publishSummary} = await import('../../src/develocity-app/summary')
+        const rendered = publishSummary({kind: 'configured', projectId: '1335548142', injected: false})
+
+        expect(rendered).toContain('injection is disabled by this workflow')
+        expect(rendered).not.toContain('Build Scans publish to project')
     })
 
     it('says a supplied access key is doing the publishing', async () => {

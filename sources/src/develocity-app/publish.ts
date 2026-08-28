@@ -30,7 +30,7 @@ const DEFAULT_DEVELOCITY_PLUGIN_VERSION = '4.5.0'
 
 export type PublishOutcome =
     | {kind: 'not-enabled'}
-    | {kind: 'configured'; projectId: string | undefined}
+    | {kind: 'configured'; projectId: string | undefined; injected: boolean}
     | {kind: 'delegated'}
     | {kind: 'failed'; reason: string}
 
@@ -89,6 +89,11 @@ export async function configurePublishing(status: RepoStatus): Promise<PublishOu
     // describe a build that is not the one running.
     const projectId = process.env['DEVELOCITY_INJECTION_PROJECT_ID']
 
+    // A workflow may switch injection off while leaving the feature enabled. The credential and the
+    // project id are still worth configuring -- a build that applies the Develocity plugin itself
+    // will use them -- but nothing will be injected into a build that does not.
+    const injected = process.env['DEVELOCITY_INJECTION_ENABLED'] === 'true'
+
     if (credentialAlreadySupplied()) {
         core.info('Develocity App: a Develocity access key is already configured, so no OIDC token is minted.')
         return {kind: 'delegated'}
@@ -117,7 +122,7 @@ export async function configurePublishing(status: RepoStatus): Promise<PublishOu
         core.exportVariable('DEVELOCITY_ACCESS_KEY', `${host}=${token.key}`)
 
         core.info(`Develocity App: Build Scan publishing configured for project ${projectId ?? '(unknown)'}.`)
-        return {kind: 'configured', projectId}
+        return {kind: 'configured', projectId, injected}
     } catch (error) {
         return {kind: 'failed', reason: error instanceof Error ? error.message : String(error)}
     }
