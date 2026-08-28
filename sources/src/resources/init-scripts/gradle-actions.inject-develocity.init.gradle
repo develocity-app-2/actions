@@ -138,6 +138,9 @@ void enableDevelocityInjection() {
     def develocityUrl = getInputParam(gradle, 'develocity-injection.url')
     def develocityAllowUntrustedServer = Boolean.parseBoolean(getInputParam(gradle, 'develocity-injection.allow-untrusted-server'))
     def develocityEnforceUrl = Boolean.parseBoolean(getInputParam(gradle, 'develocity-injection.enforce-url'))
+    // Fork delta: the Develocity project this build publishes to, for servers enforcing
+    // project-level access control, where a build naming no project is refused outright.
+    def develocityProjectId = getInputParam(gradle, 'develocity-injection.project-id')
     def buildScanUploadInBackground = Boolean.parseBoolean(getInputParam(gradle, 'develocity-injection.upload-in-background'))
     def develocityCaptureFileFingerprints = getInputParam(gradle, 'develocity-injection.capture-file-fingerprints') ? Boolean.parseBoolean(getInputParam(gradle, 'develocity-injection.capture-file-fingerprints')) : true
     def develocityPluginVersion = getInputParam(gradle, 'develocity-injection.develocity-plugin.version')
@@ -205,6 +208,13 @@ void enableDevelocityInjection() {
                             rootExtension.server = develocityUrl
                             rootExtension.allowUntrustedServer = develocityAllowUntrustedServer
                         }
+                        // Fork delta: projectId exists only on the Develocity extension, never on
+                        // Gradle Enterprise's. shouldApplyDevelocityPlugin is already gated on plugin
+                        // 3.17, which is the first release to expose it, so it needs no guard of its own.
+                        if (develocityProjectId && shouldApplyDevelocityPlugin) {
+                            logger.log(logLevel, "Setting Develocity projectId: $develocityProjectId")
+                            rootExtension.projectId = develocityProjectId
+                        }
                         if (!shouldApplyDevelocityPlugin) {
                             // Develocity plugin publishes scans by default
                             buildScanExtension.publishAlways()
@@ -230,6 +240,12 @@ void enableDevelocityInjection() {
                                 printEnforcingDevelocityUrl()
                                 develocity.server = develocityUrl
                                 develocity.allowUntrustedServer = develocityAllowUntrustedServer
+                                // Fork delta: a build that names its own project keeps it, exactly as it
+                                // keeps its own server -- until the URL is enforced, at which point the
+                                // project has to be one the enforced server recognises.
+                                if (develocityProjectId) {
+                                    develocity.projectId = develocityProjectId
+                                }
                             }
                         }
 

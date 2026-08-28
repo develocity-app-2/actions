@@ -292,6 +292,11 @@ export class DevelocityConfig {
         return core.getInput('develocity-url')
     }
 
+    // Fork delta: see `develocity-project-id` in action.yml.
+    getDevelocityProjectId(): string {
+        return core.getInput('develocity-project-id')
+    }
+
     getDevelocityAllowUntrustedServer(): boolean | undefined {
         return getOptionalBooleanInput('develocity-allow-untrusted-server')
     }

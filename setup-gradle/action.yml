@@ -165,6 +165,16 @@ inputs:
     description: The URL for the Develocity server.
     required: false
 
+  # Fork delta: upstream has no way to set a project id, which makes Develocity injection unusable
+  # against a server enforcing project-level access control -- a build naming no project is refused
+  # outright. Plumbed exactly like `develocity-ccud-plugin-version`.
+  develocity-project-id:
+    description: |
+      The Develocity project identifier this build publishes to, for servers using project-level
+      access control. Applied by Develocity injection; a build that configures its own projectId
+      keeps it unless 'develocity-enforce-url' is set.
+    required: false
+
   develocity-allow-untrusted-server:
     description: Allow communication with an untrusted server; set to _true_ if your Develocity instance is using a self-signed.
     required: false

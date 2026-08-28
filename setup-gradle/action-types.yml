@@ -121,6 +121,9 @@ inputs:
   develocity-url:
     type: string
 
+  develocity-project-id:
+    type: string
+
   develocity-allow-untrusted-server:
     type: boolean
 

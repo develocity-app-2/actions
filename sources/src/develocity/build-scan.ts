@@ -7,6 +7,8 @@ export function setup(config: DevelocityConfig): void {
 
     maybeExportVariableNotEmpty('DEVELOCITY_INJECTION_ENABLED', config.getDevelocityInjectionEnabled())
     maybeExportVariableNotEmpty('DEVELOCITY_INJECTION_URL', config.getDevelocityUrl())
+    // Fork delta: see `develocity-project-id` in action.yml.
+    maybeExportVariableNotEmpty('DEVELOCITY_INJECTION_PROJECT_ID', config.getDevelocityProjectId())
     maybeExportVariableNotEmpty(
         'DEVELOCITY_INJECTION_ALLOW_UNTRUSTED_SERVER',
         config.getDevelocityAllowUntrustedServer()
