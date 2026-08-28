@@ -16,6 +16,18 @@ import {mintIdToken} from './token'
 
 export const BUILD_SCAN_PUBLISHING = 'build-scan-publishing'
 
+/**
+ * The Develocity plugin version injection applies when nothing else specifies one.
+ *
+ * Injection is gated on a plugin version: the init script's whole apply-and-configure block sits
+ * behind `if (develocityPluginVersion)`, so without this the plugin is never applied, the build
+ * publishes nothing, and *nothing is logged* -- not an error, not a denial. Upstream only defaults
+ * it for `build-scan-publish`, which this path does not use, so it has to be defaulted here.
+ *
+ * Kept equal to upstream's own default in `develocity/build-scan.ts`.
+ */
+const DEFAULT_DEVELOCITY_PLUGIN_VERSION = '4.5.0'
+
 export type PublishOutcome =
     | {kind: 'not-enabled'}
     | {kind: 'configured'; projectId: string | undefined}
@@ -71,6 +83,7 @@ export async function configurePublishing(status: RepoStatus): Promise<PublishOu
     const projectId = process.env['GITHUB_REPOSITORY_ID']
     defaultInjectionVariable('DEVELOCITY_INJECTION_ENABLED', 'true')
     defaultInjectionVariable('DEVELOCITY_INJECTION_PROJECT_ID', projectId)
+    defaultInjectionVariable('DEVELOCITY_INJECTION_DEVELOCITY_PLUGIN_VERSION', DEFAULT_DEVELOCITY_PLUGIN_VERSION)
 
     if (credentialAlreadySupplied()) {
         core.info('Develocity App: a Develocity access key is already configured, so no OIDC token is minted.')

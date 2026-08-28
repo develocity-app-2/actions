@@ -58,6 +58,7 @@ async function configure(s = status(true)) {
 const INJECTION_VARS = [
     'DEVELOCITY_INJECTION_ENABLED',
     'DEVELOCITY_INJECTION_PROJECT_ID',
+    'DEVELOCITY_INJECTION_DEVELOCITY_PLUGIN_VERSION',
     'DEVELOCITY_ACCESS_KEY',
     'GRADLE_ENTERPRISE_ACCESS_KEY'
 ]
@@ -87,6 +88,23 @@ describe('build scan publishing', () => {
 
         expect(exported['DEVELOCITY_INJECTION_ENABLED']).toBe('true')
         expect(exported['DEVELOCITY_INJECTION_PROJECT_ID']).toBe('1335548142')
+    })
+
+    // Without a plugin version the init script applies no plugin at all, and does so silently:
+    // the build succeeds, publishes nothing, and logs neither an error nor a denial.
+    it('defaults the plugin version, without which injection is inert', async () => {
+        await configure()
+
+        expect(exported['DEVELOCITY_INJECTION_DEVELOCITY_PLUGIN_VERSION']).toBe('4.5.0')
+    })
+
+    it('leaves a plugin version the workflow chose', async () => {
+        process.env['DEVELOCITY_INJECTION_DEVELOCITY_PLUGIN_VERSION'] = '3.19'
+
+        await configure()
+
+        expect(exported['DEVELOCITY_INJECTION_DEVELOCITY_PLUGIN_VERSION']).toBeUndefined()
+        expect(process.env['DEVELOCITY_INJECTION_DEVELOCITY_PLUGIN_VERSION']).toBe('3.19')
     })
 
     it('leaves an injection setting the workflow already made', async () => {
