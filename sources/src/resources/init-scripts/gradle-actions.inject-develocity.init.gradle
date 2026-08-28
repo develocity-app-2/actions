@@ -317,6 +317,19 @@ void enableDevelocityInjection() {
                         }
                     }
 
+                    // Fork delta: projectId exists only on the Develocity extension, never on Gradle
+                    // Enterprise's, so it is set on the DV branch alone. It has been there since
+                    // plugin 3.17, the first release to expose that extension at all.
+                    if (develocityProjectId) {
+                        eachDevelocitySettingsExtension(settings,
+                            { develocity ->
+                                logger.log(logLevel, "Setting Develocity projectId: $develocityProjectId")
+                                develocity.projectId = develocityProjectId
+                            },
+                            { gradleEnterprise -> }
+                        )
+                    }
+
                     eachDevelocitySettingsExtension(settings) { ext ->
                         ext.buildScan.value CI_AUTO_INJECTION_CUSTOM_VALUE_NAME, ciAutoInjectionCustomValueValue
                     }
@@ -347,6 +360,12 @@ void enableDevelocityInjection() {
                         printEnforcingDevelocityUrl()
                         develocity.server = develocityUrl
                         develocity.allowUntrustedServer = develocityAllowUntrustedServer
+                        // Fork delta: a build that names its own project keeps it, exactly as it keeps
+                        // its own server -- until the URL is enforced, at which point the project has
+                        // to be one the enforced server recognises.
+                        if (develocityProjectId) {
+                            develocity.projectId = develocityProjectId
+                        }
                     }
 
                     if (buildScanTermsOfUseUrl && buildScanTermsOfUseAgree) {
