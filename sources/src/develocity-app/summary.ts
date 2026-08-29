@@ -1,4 +1,5 @@
 import type {Feature, RepoStatus} from './client'
+import {ENHANCED_CACHING} from './caching'
 import type {PublishOutcome} from './publish'
 
 /**
@@ -27,13 +28,33 @@ ${rows}
 `
 }
 
+/**
+ * Why this job's caching report says *Basic*, when the feature is what decides it.
+ *
+ * Upstream's caching report is written by the post step and explains a basic provider in upstream's
+ * terms -- "consider switching to Enhanced". On a connected repository that advice is wrong: the
+ * lever is the feature, not the input. Said here rather than by editing `caching-report.ts`, which
+ * is upstream's file and staying out of it is what lets the fork take upstream changes.
+ *
+ * Only for a *connected* repository. An unconnected one is already told, once, by the call to
+ * action, and repeating it per feature is what "one CTA, not one per feature" rules out.
+ */
+function cachingNote(features: Feature[] | undefined): string {
+    if (!Array.isArray(features)) return ''
+
+    const caching = features.find(feature => feature.id === ENHANCED_CACHING)
+    if (!caching || caching.enabled) return ''
+
+    return `\nGradle State Caching uses the basic provider: **${caching.name}** is not enabled for this repository.\n`
+}
+
 /** *Connected*: the App answered, and this repository is installed and enabled. */
 export function connectedSummary(status: RepoStatus, manageUrl: string): string {
     return `
 ### Develocity
 
 This build is connected to Develocity via \`${status.account}\`.
-${featureTable(status.features)}
+${featureTable(status.features)}${cachingNote(status.features)}
 [Manage features →](${manageUrl})
 `
 }
@@ -50,7 +71,7 @@ export function connectPrompt(repository: string, connectUrl: string): string {
     return `
 ### Your build could be better and faster with Develocity
 
-This build ran \`setup-gradle\` without connecting to Develocity, missing out on build scans, failure analytics and enhanced caching.
+This build ran without connecting to Develocity, missing out on build scans, failure analytics and enhanced caching.
 
 **[Connect \`${repository}\` to Develocity →](${connectUrl})**
 `
@@ -64,7 +85,7 @@ export function unreachableSummary(repository: string, connectUrl: string): stri
     return `
 ### Develocity could not be reached
 
-\`setup-gradle\` could not contact Develocity to check this repository's status.
+This build could not contact Develocity to check this repository's status, so it ran on the terms an unconnected repository gets.
 
 **[Connect \`${repository}\` to Develocity →](${connectUrl})**
 `

@@ -26,14 +26,19 @@ inputs:
     required: false
 
   # Cache configuration
+  # Fork delta: the default is inverted. Upstream defaults to 'enhanced'; here an unset value means
+  # "whatever this repository is entitled to", which the Develocity GitHub App answers. Left empty
+  # rather than defaulted, because a default would make "the workflow said enhanced" and "the
+  # workflow said nothing" indistinguishable, and those two want different log levels.
   cache-provider:
     description: |
       Specifies the caching implementation to use.
-      'enhanced' (default) uses the full-featured commercial caching service (gradle-actions-caching).
+      Unset (default) uses enhanced caching when this repository is connected to Develocity with Enhanced GitHub Actions Caching enabled, and basic caching otherwise.
+      'enhanced' asks for the full-featured commercial caching service (gradle-actions-caching). A repository that is not entitled to it warns and uses basic caching; the build does not fail.
       'basic' uses a simple open-source caching implementation based on GitHub Actions cache.
       'external' disables Gradle User Home caching by this action, for use when Gradle User Home is already saved and restored by another mechanism (e.g. Develocity Artifact Cache).
     required: false
-    default: 'enhanced'
+    default: ''
 
   cache-disabled:
     description: When 'true', all caching is disabled. No entries will be written to or read from the cache.

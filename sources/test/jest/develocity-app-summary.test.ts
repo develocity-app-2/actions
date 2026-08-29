@@ -32,6 +32,22 @@ describe('connected summary', () => {
         expect(summary).toContain('| Enhanced GitHub Actions Caching | Not enabled |')
     })
 
+    it('says why caching is basic when the caching feature is off', () => {
+        const summary = connectedSummary(connected, CONNECT_URL)
+
+        expect(summary).toContain('Gradle State Caching uses the basic provider')
+        expect(summary).toContain('**Enhanced GitHub Actions Caching** is not enabled')
+    })
+
+    it('says nothing about caching when the feature is on', () => {
+        const enabled = {
+            ...connected,
+            features: [{id: 'enhanced-caching', name: 'Enhanced GitHub Actions Caching', enabled: true}]
+        }
+
+        expect(connectedSummary(enabled, CONNECT_URL)).not.toContain('Gradle State Caching')
+    })
+
     it('degrades to a plain connected summary when the App sends no features', () => {
         const summary = connectedSummary({...connected, features: undefined}, CONNECT_URL)
 

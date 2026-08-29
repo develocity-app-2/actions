@@ -20,11 +20,10 @@ inputs:
       type: string
 
   # Cache configuration
+  # Not an enum: the default is empty, meaning "whatever this repository is entitled to", and an
+  # empty string is not a member of the value set. (Upstream's list was also missing 'external'.)
   cache-provider:
-    type: enum
-    allowed-values:
-      - basic
-      - enhanced
+    type: string
 
   cache-disabled:
     type: boolean

@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import * as cache from '@actions/cache'
 import * as deprecator from './deprecation-collector'
+import {enhancedCachingAllowed} from './develocity-app/caching'
 
 import * as path from 'path'
 
@@ -167,14 +168,22 @@ export class CacheConfig {
         return core.getMultilineInput('gradle-home-cache-excludes')
     }
 
+    /**
+     * Fork delta: enhanced caching is gated on the Develocity GitHub App reporting it enabled.
+     *
+     * Upstream folds '' into 'enhanced' and defaults the input to 'enhanced'. Here the input
+     * defaults to empty, so the two are distinguishable, and both go through the gate -- differing
+     * only in how loudly a downgrade is announced. See `develocity-app/caching.ts`.
+     */
     getCacheProvider(): CacheProvider {
         const val = core.getInput('cache-provider')
         switch (val.toLowerCase().trim()) {
             case 'basic':
                 return CacheProvider.Basic
             case 'enhanced':
+                return enhancedCachingAllowed(true) ? CacheProvider.Enhanced : CacheProvider.Basic
             case '':
-                return CacheProvider.Enhanced
+                return enhancedCachingAllowed(false) ? CacheProvider.Enhanced : CacheProvider.Basic
             case 'external':
                 return CacheProvider.External
         }

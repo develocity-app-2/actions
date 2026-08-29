@@ -3,6 +3,7 @@ import * as core from '@actions/core'
 import {fetchRepoStatus, type RepoStatus} from './client'
 import {buildConnectUrl, contextFromEnvironment} from './connectUrl'
 import {configurePublishing} from './publish'
+import {currentStatus, saveStatus} from './status'
 import {connectPrompt, connectedSummary, publishSummary, unreachableSummary} from './summary'
 import {mintIdToken, oidcAvailable} from './token'
 
@@ -21,9 +22,6 @@ import {mintIdToken, oidcAvailable} from './token'
  * Nothing about the build changes here. The features the App reports are reported, and no more.
  */
 
-/** Where the fetched status is saved for the post step, and for the steps built on top of this. */
-export const STATUS_STATE = 'DEVELOCITY_APP_STATUS'
-
 /**
  * Marks that this job has already reported. Exported to the environment rather than saved as state,
  * because it has to be visible to a *later step* -- `setup-gradle` and `dependency-submission` both
@@ -32,16 +30,6 @@ export const STATUS_STATE = 'DEVELOCITY_APP_STATUS'
  * in `setup-gradle.ts`.
  */
 const REPORTED_VAR = 'DEVELOCITY_APP_STATUS_REPORTED'
-
-/**
- * The status fetched in this step, handed from the reporting half to the acting half.
- *
- * Deliberately in memory rather than via `core.saveState`/`getState`: those move state from the
- * main step to the *post* step, and the runner only populates `STATE_*` in the post step's
- * environment. Read back within a single step, `getState` always returns empty. `saveState` below
- * still runs, because the post step is what it is for.
- */
-let fetchedStatus: RepoStatus | undefined
 
 /**
  * Act on the features the App reported, once upstream's own setup has run.
@@ -54,13 +42,14 @@ let fetchedStatus: RepoStatus | undefined
  * - an access key supplied by the workflow is exchanged by upstream's `setupToken`, and minting an
  *   OIDC token before that ran would race a credential this module is supposed to defer to.
  *
- * Reads the status saved in the main step. The App is not called a second time.
+ * Reads the status the reporting half established. The App is not called a second time.
  */
 export async function configureDevelocityAppFeatures(): Promise<void> {
     try {
-        if (!fetchedStatus) return
+        const status = currentStatus()
+        if (!status) return
 
-        const outcome = await configurePublishing(fetchedStatus)
+        const outcome = await configurePublishing(status)
         if (outcome.kind === 'failed') {
             core.warning(`Develocity App: Build Scan publishing could not be configured. ${outcome.reason}`)
         }
@@ -127,8 +116,7 @@ export async function reportDevelocityAppStatus(): Promise<void> {
         }
 
         const status = result.status
-        core.saveState(STATUS_STATE, JSON.stringify(status))
-        fetchedStatus = status
+        saveStatus(status)
 
         const enabled = (status.features ?? []).filter(feature => feature.enabled).map(feature => feature.id)
         core.info(
