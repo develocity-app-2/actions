@@ -13,6 +13,7 @@ const summaryWrites: string[] = []
 const getIDToken = jest.fn(async (_audience?: string): Promise<string> => 'a.token.value')
 const setSecret = jest.fn()
 const warning = jest.fn()
+const exportVariable = jest.fn()
 
 // The mock must cover everything the module graph touches, not just what this test asserts on:
 // ESM linking fails outright on a missing named export, wherever in the graph it is referenced.
@@ -25,7 +26,7 @@ jest.unstable_mockModule('@actions/core', () => ({
     setSecret,
     saveState: jest.fn(),
     getState: jest.fn(() => ''),
-    exportVariable: jest.fn(),
+    exportVariable,
     getIDToken,
     summary: {
         addRaw: (text: string) => {
@@ -37,6 +38,7 @@ jest.unstable_mockModule('@actions/core', () => ({
 }))
 
 const APP_URL = 'https://app.example.com'
+const REPORTED_VAR = 'DEVELOCITY_APP_STATUS_REPORTED'
 const WORKFLOW_REF = 'develocity-app-2/demo-app/.github/workflows/ci.yml@refs/heads/main'
 
 async function runIntegration(): Promise<void> {
@@ -60,6 +62,7 @@ describe('the decision order', () => {
         process.env['GITHUB_WORKFLOW_REF'] = WORKFLOW_REF
         delete process.env['ACTIONS_ID_TOKEN_REQUEST_URL']
         delete process.env['ACTIONS_ID_TOKEN_REQUEST_TOKEN']
+        delete process.env[REPORTED_VAR]
 
         fetchSpy = jest.spyOn(globalThis, 'fetch')
     })
@@ -132,5 +135,26 @@ describe('the decision order', () => {
         inputs['develocity-app-audience'] = 'https://audience.example.com'
         await runIntegration()
         expect(getIDToken).toHaveBeenCalledWith('https://audience.example.com')
+    })
+
+    // `setup-gradle` and `dependency-submission` both report. A job using both must not mint two
+    // tokens, call the App twice, or render the call to action twice.
+    it('marks the job as reported so a later gradle/actions step does not report again', async () => {
+        await runIntegration()
+
+        expect(exportVariable).toHaveBeenCalledWith(REPORTED_VAR, true)
+    })
+
+    it('does nothing at all when an earlier gradle/actions step already reported', async () => {
+        inputs['develocity-url'] = 'https://develocity.example.com'
+        process.env['ACTIONS_ID_TOKEN_REQUEST_URL'] = 'https://runner.example.com/token?api-version=1'
+        process.env['ACTIONS_ID_TOKEN_REQUEST_TOKEN'] = 'runner-token'
+        process.env[REPORTED_VAR] = 'true'
+
+        await runIntegration()
+
+        expect(getIDToken).not.toHaveBeenCalled()
+        expect(fetchSpy).not.toHaveBeenCalled()
+        expect(summaryWrites).toHaveLength(0)
     })
 })

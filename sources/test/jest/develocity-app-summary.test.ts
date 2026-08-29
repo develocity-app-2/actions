@@ -12,8 +12,8 @@ const connected: RepoStatus = {
     account: 'develocity-app-2',
     connectUrl: CONNECT_URL,
     features: [
-        {id: 'build-scans', name: 'Build Scans', enabled: true},
-        {id: 'enhanced-caching', name: 'Enhanced caching', enabled: false}
+        {id: 'build-scan-publishing', name: 'Build Scan publishing', enabled: true},
+        {id: 'enhanced-caching', name: 'Enhanced GitHub Actions Caching', enabled: false}
     ]
 }
 
@@ -28,8 +28,8 @@ describe('connected summary', () => {
     it('renders each feature as the App sent it, enabled or not', () => {
         const summary = connectedSummary(connected, CONNECT_URL)
 
-        expect(summary).toContain('| Build Scans | Enabled |')
-        expect(summary).toContain('| Enhanced caching | Not enabled |')
+        expect(summary).toContain('| Build Scan publishing | Enabled |')
+        expect(summary).toContain('| Enhanced GitHub Actions Caching | Not enabled |')
     })
 
     it('degrades to a plain connected summary when the App sends no features', () => {

@@ -15,11 +15,23 @@ import {mintIdToken, oidcAvailable} from './token'
  * environment. Connecting is something a workflow has to say out loud; inviting it to say so costs
  * no credential and no network call.
  *
+ * Both `setup-gradle` and `dependency-submission` call this, on identical terms: the same call to
+ * action, the same status, the same features. A job using both reports once -- see `REPORTED_VAR`.
+ *
  * Nothing about the build changes here. The features the App reports are reported, and no more.
  */
 
 /** Where the fetched status is saved for the post step, and for the steps built on top of this. */
 export const STATUS_STATE = 'DEVELOCITY_APP_STATUS'
+
+/**
+ * Marks that this job has already reported. Exported to the environment rather than saved as state,
+ * because it has to be visible to a *later step* -- `setup-gradle` and `dependency-submission` both
+ * report, and a job using both would otherwise mint two tokens, call the App twice and render the
+ * call to action twice. The same idiom, for the same reason, as `GRADLE_BUILD_ACTION_SETUP_COMPLETED`
+ * in `setup-gradle.ts`.
+ */
+const REPORTED_VAR = 'DEVELOCITY_APP_STATUS_REPORTED'
 
 /**
  * The status fetched in this step, handed from the reporting half to the acting half.
@@ -73,6 +85,13 @@ export async function configureDevelocityAppFeatures(): Promise<void> {
  */
 export async function reportDevelocityAppStatus(): Promise<void> {
     try {
+        // Bypass on all but the first gradle/actions step in the job.
+        if (process.env[REPORTED_VAR]) {
+            core.info('Develocity App: status already reported by an earlier gradle/actions step.')
+            return
+        }
+        core.exportVariable(REPORTED_VAR, true)
+
         const appUrl = core.getInput('develocity-app-url').trim()
         const context = contextFromEnvironment()
         const repository = context.repository ?? 'this repository'

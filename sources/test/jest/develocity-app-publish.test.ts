@@ -45,7 +45,7 @@ const status = (enabled: boolean) => ({
     account: 'develocity-app-2',
     features: [
         {id: 'build-scan-publishing', name: 'Build Scan publishing', enabled},
-        {id: 'enhanced-caching', name: 'Enhanced caching', enabled: true}
+        {id: 'enhanced-caching', name: 'Enhanced GitHub Actions Caching', enabled: true}
     ]
 })
 

@@ -129,6 +129,18 @@ inputs:
   develocity-token-expiry:
     type: integer
 
+  develocity-url:
+    type: string
+
+  develocity-project-id:
+    type: string
+
+  develocity-app-url:
+    type: string
+
+  develocity-app-audience:
+    type: string
+
   # Wrapper validation configuration
   validate-wrappers:
     type: boolean

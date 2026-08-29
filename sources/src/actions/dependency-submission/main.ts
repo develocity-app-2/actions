@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import * as setupGradle from '../../setup-gradle'
 import * as gradle from '../../execution/gradle'
 import * as dependencyGraph from '../../dependency-graph'
+import {configureDevelocityAppFeatures, reportDevelocityAppStatus} from '../../develocity-app'
 
 import {parseArgsStringToArgv} from 'string-argv'
 import {
@@ -24,8 +25,16 @@ export async function run(): Promise<void> {
     try {
         setActionId('gradle/actions/dependency-submission')
 
+        // Report this repository's Develocity GitHub App status. Written here, in the main step,
+        // so the call to action lands above the build-results summary the post step appends.
+        await reportDevelocityAppStatus()
+
         // Configure Gradle environment (Gradle User Home)
         await setupGradle.setup(new CacheConfig(), new DevelocityConfig(), new WrapperValidationConfig())
+
+        // Act on what the App reported, after upstream's setup so that the workflow's own inputs
+        // and any supplied access key have already had their say.
+        await configureDevelocityAppFeatures()
 
         // Capture the enabled state of dependency-graph
         const originallyEnabled = process.env['GITHUB_DEPENDENCY_GRAPH_ENABLED']

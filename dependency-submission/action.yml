@@ -184,6 +184,41 @@ inputs:
     description: The Develocity short-lived access tokens expiry in hours. Default is 2 hours.
     required: false
 
+  # Fork delta: upstream exposes `develocity-url` on `setup-gradle` only. Without it there is no
+  # opt-in here -- its presence is how a workflow declares that this build should use Develocity at
+  # all -- and the Develocity GitHub App is never contacted.
+  develocity-url:
+    description: The URL for the Develocity server.
+    required: false
+
+  # Fork delta: upstream has no way to set a project id, which makes Develocity injection unusable
+  # against a server enforcing project-level access control -- a build naming no project is refused
+  # outright. Plumbed exactly like `develocity-ccud-plugin-version`.
+  develocity-project-id:
+    description: |
+      The Develocity project identifier this build publishes to, for servers using project-level
+      access control. Applied by Develocity injection; a build that configures its own projectId
+      keeps it unless 'develocity-enforce-url' is set.
+    required: false
+
+  # Develocity GitHub App configuration (fork delta)
+  # Prefixed `develocity-app-` so they never collide with the `develocity-*` inputs above, which
+  # mean the Develocity *server*. These two mean the Develocity GitHub App, a different thing.
+  develocity-app-url:
+    description: |
+      Base URL of the Develocity GitHub App. A default rather than a constant so the address can be
+      changed without rebuilding the bundle, and overridden by a workflow without forking.
+    required: false
+    default: 'https://mortician-fling-outsell.ngrok-free.dev'
+
+  develocity-app-audience:
+    description: |
+      OIDC audience to request when identifying this repository to the Develocity GitHub App.
+      Empty means use 'develocity-app-url', which matches the App's own default. Override only when
+      the App is configured with a matching OIDC_AUDIENCE.
+    required: false
+    default: ''
+
   # Wrapper validation configuration
   validate-wrappers:
     description: |
