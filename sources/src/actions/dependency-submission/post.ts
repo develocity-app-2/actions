@@ -1,5 +1,7 @@
 import * as setupGradle from '../../setup-gradle'
 
+import {reportBuildFailures} from '../../develocity-app'
+
 import {CacheConfig, DevelocityConfig, SummaryConfig} from '../../configuration'
 import {handlePostActionError} from '../../errors'
 import {forceExit} from '../../force-exit'
@@ -14,6 +16,10 @@ process.on('uncaughtException', e => handlePostActionError(e))
  */
 export async function run(): Promise<void> {
     try {
+        // Ahead of `complete`, which ends by marking the build results processed -- after which
+        // there is nothing left to read the failed builds' Build Scans from.
+        await reportBuildFailures()
+
         await setupGradle.complete(new CacheConfig(), new DevelocityConfig(), new SummaryConfig())
     } catch (error) {
         handlePostActionError(error)

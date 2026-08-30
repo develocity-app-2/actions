@@ -1,6 +1,8 @@
 import * as setupGradle from '../../setup-gradle'
 import * as dependencyGraph from '../../dependency-graph'
 
+import {reportBuildFailures} from '../../develocity-app'
+
 import {CacheConfig, DependencyGraphConfig, DevelocityConfig, SummaryConfig} from '../../configuration'
 import {handlePostActionError} from '../../errors'
 import {emitDeprecationWarnings, restoreDeprecationState} from '../../deprecation-collector'
@@ -18,6 +20,10 @@ export async function run(): Promise<void> {
     try {
         restoreDeprecationState()
         emitDeprecationWarnings()
+
+        // Ahead of `complete`, which ends by marking the build results processed -- after which
+        // there is nothing left to read the failed builds' Build Scans from.
+        await reportBuildFailures()
 
         if (await setupGradle.complete(new CacheConfig(), new DevelocityConfig(), new SummaryConfig())) {
             // Only submit the dependency graphs once per job

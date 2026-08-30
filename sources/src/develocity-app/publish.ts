@@ -28,6 +28,23 @@ export const BUILD_SCAN_PUBLISHING = 'build-scan-publishing'
  */
 const DEFAULT_DEVELOCITY_PLUGIN_VERSION = '4.5.0'
 
+/**
+ * The Common Custom User Data plugin version injection applies when nothing else specifies one.
+ *
+ * This plugin writes `Git repository`, `Git branch`, `Git commit id`, `CI run` and the pull-request
+ * branch names into every Build Scan, which is what makes a scan navigable back to the commit and
+ * the run that produced it.
+ *
+ * **Nothing depends on it.** The App confines every build-data read to the reporting repository's
+ * own Develocity project with a short-lived token, so which builds a report can reach is the
+ * server's answer and not a custom value's (`github-app.md` -- *The failure summary*). A build
+ * writes its own custom values, so they could never have carried that weight.
+ *
+ * Kept equal to upstream's own default in `develocity/build-scan.ts`, as the Develocity plugin
+ * version above is.
+ */
+const DEFAULT_CCUD_PLUGIN_VERSION = '2.1'
+
 export type PublishOutcome =
     | {kind: 'not-enabled'}
     | {kind: 'configured'; projectId: string | undefined; injected: boolean}
@@ -83,6 +100,7 @@ export async function configurePublishing(status: RepoStatus): Promise<PublishOu
     defaultInjectionVariable('DEVELOCITY_INJECTION_ENABLED', 'true')
     defaultInjectionVariable('DEVELOCITY_INJECTION_PROJECT_ID', process.env['GITHUB_REPOSITORY_ID'])
     defaultInjectionVariable('DEVELOCITY_INJECTION_DEVELOCITY_PLUGIN_VERSION', DEFAULT_DEVELOCITY_PLUGIN_VERSION)
+    defaultInjectionVariable('DEVELOCITY_INJECTION_CCUD_PLUGIN_VERSION', DEFAULT_CCUD_PLUGIN_VERSION)
 
     // Read back rather than reusing the default: when the workflow set its own project id, that is
     // the one the build will use, and reporting the id this module *would* have chosen would
